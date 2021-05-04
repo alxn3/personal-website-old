@@ -1,10 +1,19 @@
+import Navbar from 'components/navbar';
 import Head from 'next/head';
-import Image from 'next/image';
 
-export default function Home() {
+const Home = () => {
   return (
     <div>
-      <h1 className="text-8xl">Hello There.</h1>
+      <Head>
+        <title>Home | Alex Lin</title>
+        <meta name="description" content="Alex Lin's personal website." />
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+      <main>
+        <Navbar />
+      </main>
     </div>
   );
-}
+};
+
+export default Home;
