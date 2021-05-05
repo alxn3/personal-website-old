@@ -1,7 +1,8 @@
-use web_sys::{WebGlProgram, WebGlRenderingContext, WebGlShader};
+use web_sys::{WebGlProgram, WebGlShader};
+use web_sys::WebGlRenderingContext as GL;
 
 pub fn link_program(
-    context: &WebGlRenderingContext,
+    context: &GL,
     vert_shader: &WebGlShader,
     frag_shader: &WebGlShader,
 ) -> Result<WebGlProgram, String> {
@@ -14,7 +15,7 @@ pub fn link_program(
     context.link_program(&program);
 
     if context
-        .get_program_parameter(&program, WebGlRenderingContext::LINK_STATUS)
+        .get_program_parameter(&program, GL::LINK_STATUS)
         .as_bool()
         .unwrap_or(false)
     {
@@ -27,7 +28,7 @@ pub fn link_program(
 }
 
 pub fn compile_shader(
-    context: &WebGlRenderingContext,
+    context: &GL,
     shader_type: u32,
     source: &str,
 ) -> Result<WebGlShader, String> {
@@ -38,7 +39,7 @@ pub fn compile_shader(
     context.compile_shader(&shader);
 
     if context
-        .get_shader_parameter(&shader, WebGlRenderingContext::COMPILE_STATUS)
+        .get_shader_parameter(&shader, GL::COMPILE_STATUS)
         .as_bool()
         .unwrap_or(false)
     {

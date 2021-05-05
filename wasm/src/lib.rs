@@ -1,7 +1,7 @@
 extern crate wasm_bindgen;
 extern crate nalgebra as na;
 use wasm_bindgen::prelude::*;
-use web_sys::WebGlRenderingContext;
+use web_sys::WebGlRenderingContext as GL;
 
 #[macro_use]
 extern crate lazy_static;
@@ -20,14 +20,14 @@ extern "C" {
 
 #[wasm_bindgen]
 pub struct WASMClient {
-    gl: WebGlRenderingContext,
+    gl: GL,
     program_color_2d: programs::Color2D,
 }
 
 #[wasm_bindgen]
 impl WASMClient {
     #[wasm_bindgen(constructor)]
-    pub fn new(webgl_context: WebGlRenderingContext) -> Self {
+    pub fn new(webgl_context: GL) -> Self {
         console_error_panic_hook::set_once();
         gl_setup::initialize_webgl_context(&webgl_context);
         Self {
@@ -43,7 +43,7 @@ impl WASMClient {
 
     pub fn render(&self) {
         self.gl.clear(
-            WebGlRenderingContext::COLOR_BUFFER_BIT | WebGlRenderingContext::DEPTH_BUFFER_BIT,
+            GL::COLOR_BUFFER_BIT | GL::DEPTH_BUFFER_BIT,
         );
 
         let curr_state = app_state::get_curr_state();
