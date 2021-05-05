@@ -1,4 +1,16 @@
+extern crate wasm_bindgen;
+extern crate nalgebra as na;
 use wasm_bindgen::prelude::*;
+use web_sys::WebGlRenderingContext;
+
+#[macro_use]
+extern crate lazy_static;
+
+mod app_state;
+mod common_funcs;
+mod gl_setup;
+mod programs;
+mod shaders;
 
 #[wasm_bindgen]
 extern "C" {
@@ -7,19 +19,38 @@ extern "C" {
 }
 
 #[wasm_bindgen]
-pub fn add_two_ints(a: u32, b: u32) -> u32 {
-   a + b
-}
-#[wasm_bindgen]
-pub fn fib(n: u32) -> u32 {
-   if n == 0 || n == 1 {
-      return n;
-   }
-
-   fib(n - 1) + fib(n - 2)
+pub struct WASMClient {
+    gl: WebGlRenderingContext,
+    program_color_2d: programs::Color2D,
 }
 
 #[wasm_bindgen]
-pub fn HELLO() {
-  log("HELLO!")
+impl WASMClient {
+    #[wasm_bindgen(constructor)]
+    pub fn new(webgl_context: WebGlRenderingContext) -> Self {
+        console_error_panic_hook::set_once();
+        gl_setup::initialize_webgl_context(&webgl_context);
+        Self {
+            program_color_2d: programs::Color2D::new(&webgl_context),
+            gl: webgl_context,
+        }
+    }
+
+    pub fn update(&mut self, time: f32, width: f32, height: f32) -> Result<(), JsValue> {
+        app_state::update_dynamic_data(time, width, height);
+        Ok(())
+    }
+
+    pub fn render(&self) {
+        self.gl.clear(
+            WebGlRenderingContext::COLOR_BUFFER_BIT | WebGlRenderingContext::DEPTH_BUFFER_BIT,
+        );
+
+        let curr_state = app_state::get_curr_state();
+
+        self.program_color_2d
+            .render(&self.gl,
+              curr_state.canvas_width ,
+              curr_state.canvas_height);
+    }
 }
