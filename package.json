@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build && next export",
+    "build-wasm": "cd wasm && wasm-pack build",
     "start": "next start"
   },
   "dependencies": {
