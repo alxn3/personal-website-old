@@ -1,15 +1,15 @@
 import Link from 'next/link';
 
-const NavLinks: {name: string, link: string}[] = [
+const NavLinks: { name: string; link: string }[] = [
   {
     name: 'Home',
-    link: '/'
+    link: '/',
   },
   {
     name: 'Fluid',
-    link: '/fluid'
-  }
-]
+    link: '/fluid',
+  },
+];
 
 const Navbar = () => {
   return (
@@ -22,11 +22,13 @@ const Navbar = () => {
         </a>
       </Link>
       <div className="ml-auto inline-flex flex-row">
-        {NavLinks.map(links => <Link href={links.link}>
-          <a className='px-3 py-2 rounded text-gray-400 font-bold items-center justify-center hover:bg-gray-600 hover:text-white'>
-            {links.name}
-          </a>
-        </Link>)}
+        {NavLinks.map((links) => (
+          <Link href={links.link} key={links.link}>
+            <a className="px-3 py-2 rounded text-gray-400 font-bold items-center justify-center hover:bg-gray-600 hover:text-white">
+              {links.name}
+            </a>
+          </Link>
+        ))}
       </div>
     </nav>
   );
