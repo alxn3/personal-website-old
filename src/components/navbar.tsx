@@ -6,8 +6,8 @@ const NavLinks: {name: string, link: string}[] = [
     link: '/'
   },
   {
-    name: 'Simulations',
-    link: '/'
+    name: 'Fluid',
+    link: '/fluid'
   }
 ]
 
