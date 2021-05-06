@@ -1,5 +1,6 @@
 extern crate wasm_bindgen;
 extern crate nalgebra as na;
+use render::Renderer;
 use wasm_bindgen::prelude::*;
 use web_sys::WebGlRenderingContext as GL;
 use std::rc::Rc;
@@ -8,7 +9,7 @@ use std::rc::Rc;
 extern crate lazy_static;
 
 mod app_state;
-mod render_gl;
+mod render;
 mod gl_setup;
 mod programs;
 mod shaders;
@@ -21,8 +22,9 @@ extern "C" {
 
 #[wasm_bindgen]
 pub struct WASMClient {
+    renderer: Renderer,
     gl: Rc<GL>,
-    program_color_2d: programs::Color2D,
+    program_color_2d: programs::Cell,
 }
 
 #[wasm_bindgen]
@@ -33,10 +35,12 @@ impl WASMClient {
         gl_setup::initialize_webgl_context(&webgl_context);
 
         let gl = Rc::new(webgl_context);
+        let renderer = Renderer::new(&gl);
 
         Self {
-            program_color_2d: programs::Color2D::new(&gl),
+            program_color_2d: programs::Cell::new(&gl),
             gl: gl,
+            renderer
         }
     }
 
@@ -45,14 +49,14 @@ impl WASMClient {
         Ok(())
     }
 
-    pub fn render(&self) {
+    pub fn render(&mut self) {
         self.gl.clear(
             GL::COLOR_BUFFER_BIT | GL::DEPTH_BUFFER_BIT,
         );
 
         let curr_state = app_state::get_curr_state();
 
-        self.program_color_2d
+        &self.renderer
             .render(&self.gl,
               curr_state.canvas_width ,
               curr_state.canvas_height);

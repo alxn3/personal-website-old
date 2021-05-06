@@ -1,4 +1,4 @@
-use super::super::render_gl::*;
+use super::super::render;
 use js_sys::WebAssembly;
 use na;
 use wasm_bindgen::prelude::*;
@@ -12,8 +12,8 @@ extern "C" {
     fn log(s: &str);
 }
 
-pub struct Color2D {
-    program: Program,
+pub struct Cell {
+    program: render::Program,
     index_count: i32,
     rect_vertice_buffer: WebGlBuffer,
     u_color: WebGlUniformLocation,
@@ -21,13 +21,13 @@ pub struct Color2D {
     u_transform: WebGlUniformLocation,
 }
 
-impl Color2D {
+impl Cell {
     pub fn new(gl: &GL) -> Self {
-        let program = Program::from_shaders(
+        let program = render::Program::from_shaders(
             gl,
             &[
-                Shader::from_vert_source(gl, super::super::shaders::vertex::COLOR_2D).unwrap(),
-                Shader::from_frag_source(gl, super::super::shaders::fragment::COLOR_2D).unwrap(),
+                render::Shader::from_vert_source(gl, super::super::shaders::vertex::COLOR_2D).unwrap(),
+                render::Shader::from_frag_source(gl, super::super::shaders::fragment::COLOR_2D).unwrap(),
             ],
         ).unwrap();
 
