@@ -1,4 +1,3 @@
-use super::super::render_gl as cf;
 use super::super::render_gl::*;
 use js_sys::WebAssembly;
 use na;
