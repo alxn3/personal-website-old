@@ -1,10 +1,11 @@
-use super::super::common_funcs as cf;
+use super::super::render_gl as cf;
+use super::super::render_gl::*;
 use js_sys::WebAssembly;
 use na;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
-use web_sys::*;
 use web_sys::WebGlRenderingContext as GL;
+use web_sys::*;
 
 #[wasm_bindgen]
 extern "C" {
@@ -13,7 +14,7 @@ extern "C" {
 }
 
 pub struct Color2D {
-    program: WebGlProgram,
+    program: Program,
     index_count: i32,
     rect_vertice_buffer: WebGlBuffer,
     u_color: WebGlUniformLocation,
@@ -23,22 +24,13 @@ pub struct Color2D {
 
 impl Color2D {
     pub fn new(gl: &GL) -> Self {
-        let program = cf::link_program(
+        let program = Program::from_shaders(
             gl,
-            &cf::compile_shader(
-                gl,
-                GL::VERTEX_SHADER,
-                super::super::shaders::vertex::COLOR_2D,
-            )
-            .unwrap(),
-            &cf::compile_shader(
-                gl,
-                GL::FRAGMENT_SHADER,
-                super::super::shaders::fragment::COLOR_2D,
-            )
-            .unwrap(),
-        )
-        .unwrap();
+            &[
+                Shader::from_vert_source(gl, super::super::shaders::vertex::COLOR_2D).unwrap(),
+                Shader::from_frag_source(gl, super::super::shaders::fragment::COLOR_2D).unwrap(),
+            ],
+        ).unwrap();
 
         let vertices_rect: [f32; 8] = [-2.5, 0.5, -0.5, -0.5, 0.5, 0.5, 0.5, -0.5];
 
@@ -55,11 +47,7 @@ impl Color2D {
         );
         let buffer_rect = gl.create_buffer().ok_or("Failed to create buffer").unwrap();
         gl.bind_buffer(GL::ARRAY_BUFFER, Some(&buffer_rect));
-        gl.buffer_data_with_array_buffer_view(
-            GL::ARRAY_BUFFER,
-            &vert_array,
-            GL::STATIC_DRAW,
-        );
+        gl.buffer_data_with_array_buffer_view(GL::ARRAY_BUFFER, &vert_array, GL::STATIC_DRAW);
 
         let indices_memory_buffer = wasm_bindgen::memory()
             .dyn_into::<WebAssembly::Memory>()
@@ -71,10 +59,7 @@ impl Color2D {
             indices_location + indices_rect.len() as u32,
         );
         let buffer_indices = gl.create_buffer().unwrap();
-        gl.bind_buffer(
-            GL::ELEMENT_ARRAY_BUFFER,
-            Some(&buffer_indices),
-        );
+        gl.bind_buffer(GL::ELEMENT_ARRAY_BUFFER, Some(&buffer_indices));
         gl.buffer_data_with_array_buffer_view(
             GL::ELEMENT_ARRAY_BUFFER,
             &indices_array,
@@ -82,9 +67,9 @@ impl Color2D {
         );
 
         Self {
-            u_color: gl.get_uniform_location(&program, "uColor").unwrap(),
-            u_opacity: gl.get_uniform_location(&program, "uOpacity").unwrap(),
-            u_transform: gl.get_uniform_location(&program, "uTransform").unwrap(),
+            u_color: gl.get_uniform_location(&program.id, "uColor").unwrap(),
+            u_opacity: gl.get_uniform_location(&program.id, "uOpacity").unwrap(),
+            u_transform: gl.get_uniform_location(&program.id, "uTransform").unwrap(),
             index_count: indices_array.length() as i32,
             rect_vertice_buffer: buffer_rect,
             program: program,
@@ -92,12 +77,9 @@ impl Color2D {
     }
 
     pub fn render(&self, gl: &GL, canvas_width: f32, canvas_height: f32) {
-        gl.use_program(Some(&self.program));
+        gl.use_program(Some(&self.program.id));
 
-        gl.bind_buffer(
-            GL::ARRAY_BUFFER,
-            Some(&self.rect_vertice_buffer),
-        );
+        gl.bind_buffer(GL::ARRAY_BUFFER, Some(&self.rect_vertice_buffer));
         gl.vertex_attrib_pointer_with_i32(0, 2, GL::FLOAT, false, 0, 0);
         gl.enable_vertex_attrib_array(0);
 
@@ -116,11 +98,6 @@ impl Color2D {
             &proj.as_matrix().as_slice(),
         );
 
-        gl.draw_elements_with_i32(
-            GL::TRIANGLES,
-            self.index_count,
-            GL::UNSIGNED_SHORT,
-            0,
-        );
+        gl.draw_elements_with_i32(GL::TRIANGLES, self.index_count, GL::UNSIGNED_SHORT, 0);
     }
 }

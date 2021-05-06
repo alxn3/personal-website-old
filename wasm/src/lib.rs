@@ -2,12 +2,13 @@ extern crate wasm_bindgen;
 extern crate nalgebra as na;
 use wasm_bindgen::prelude::*;
 use web_sys::WebGlRenderingContext as GL;
+use std::rc::Rc;
 
 #[macro_use]
 extern crate lazy_static;
 
 mod app_state;
-mod common_funcs;
+mod render_gl;
 mod gl_setup;
 mod programs;
 mod shaders;
@@ -20,7 +21,7 @@ extern "C" {
 
 #[wasm_bindgen]
 pub struct WASMClient {
-    gl: GL,
+    gl: Rc<GL>,
     program_color_2d: programs::Color2D,
 }
 
@@ -30,9 +31,12 @@ impl WASMClient {
     pub fn new(webgl_context: GL) -> Self {
         console_error_panic_hook::set_once();
         gl_setup::initialize_webgl_context(&webgl_context);
+
+        let gl = Rc::new(webgl_context);
+
         Self {
-            program_color_2d: programs::Color2D::new(&webgl_context),
-            gl: webgl_context,
+            program_color_2d: programs::Color2D::new(&gl),
+            gl: gl,
         }
     }
 
