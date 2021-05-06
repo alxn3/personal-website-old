@@ -26,13 +26,12 @@ impl Cell {
         let program = render::Program::from_shaders(
             gl,
             &[
-                render::Shader::from_vert_source(gl, super::super::shaders::vertex::COLOR_2D).unwrap(),
-                render::Shader::from_frag_source(gl, super::super::shaders::fragment::COLOR_2D).unwrap(),
+                render::Shader::from_vert_source(gl, super::super::shaders::vertex::CELL).unwrap(),
+                render::Shader::from_frag_source(gl, super::super::shaders::fragment::CELL).unwrap(),
             ],
         ).unwrap();
 
         let vertices_rect: [f32; 8] = [-2.5, 0.5, -0.5, -0.5, 0.5, 0.5, 0.5, -0.5];
-
         let indices_rect: [u16; 6] = [0, 1, 2, 2, 1, 3];
 
         let memory_buffer = wasm_bindgen::memory()

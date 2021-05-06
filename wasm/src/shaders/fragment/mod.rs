@@ -1,1 +1,1 @@
-pub const COLOR_2D: &str = include_str!("color_2d.frag");
+pub const CELL: &str = include_str!("cell.frag");
