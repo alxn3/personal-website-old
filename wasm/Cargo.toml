@@ -28,6 +28,7 @@ features = [
     'WebGlProgram',
     'WebGlRenderingContext',
     'WebGlShader',
+    'WebGlTexture',
     'WebGlUniformLocation',
     'WebGlVertexArrayObject',
     'Window',
