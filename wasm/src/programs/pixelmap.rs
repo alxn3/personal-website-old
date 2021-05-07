@@ -1,4 +1,4 @@
-use crate::{app_state, render, util};
+use crate::{render, util};
 use arrayvec::ArrayVec;
 use wasm_bindgen::prelude::*;
 use web_sys::WebGlRenderingContext as GL;
@@ -141,7 +141,7 @@ impl PixelMap {
         );
     }
 
-    fn get_pixel(&self, x: usize, y: usize) -> [u8; 4] {
+    pub fn get_pixel(&self, x: usize, y: usize) -> [u8; 4] {
         let index = 4 * (y * self.height + x);
         [
             self.pixels[index],
@@ -151,7 +151,7 @@ impl PixelMap {
         ]
     }
 
-    fn set_pixel(&mut self, x: usize, y: usize, new_pixel: &[u8; 4]) {
+    pub fn set_pixel(&mut self, x: usize, y: usize, new_pixel: &[u8; 4]) {
       let index = 4 * (y * self.height + x);
       self.pixels[index + 1] = new_pixel[1];
       self.pixels[index + 3] = new_pixel[3];
@@ -159,19 +159,11 @@ impl PixelMap {
       self.pixels[index] = new_pixel[0];
     }
 
-    pub fn update(&mut self) {
-      let delta_time = app_state::get_curr_state().time;
-      for x in 0..self.width {
-        for y in 0..self.height {
-          let pixel = self.get_pixel(x, y);
-          &self.set_pixel(x, y,
-            &[(f32::sin(delta_time / 1000.0 + x as f32 / self.width as f32) * 256.0) as u8,
-            (f32::cos(delta_time / 1000.0 + y as f32/ self.height as f32) * 256.0) as u8,
-            ((1.0 - f32::sin(delta_time / 1000.0 + x as f32/ self.width as f32)) * 256.0) as u8 ,
-            255
-            ]
-          );
-        }
-      }
+    pub fn get_width(&self) -> usize {
+      self.width
+    }
+
+    pub fn get_height(&self) -> usize {
+      self.height
     }
 }

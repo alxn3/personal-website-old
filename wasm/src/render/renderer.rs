@@ -8,7 +8,7 @@ pub struct Camera {
 }
 
 pub struct Renderer {
-    pixel_map: programs::PixelMap,
+    fluid_simulation: fluid::FluidSimulation,
     vao_ext: js_sys::Object
 }
 
@@ -18,10 +18,9 @@ impl Renderer {
             .get_extension("OES_vertex_array_object")
             .expect("Get OES vao ext")
             .expect("OES vao ext");
-        let pixel_map = programs::PixelMap::new(gl, 20, 20, -1.0, 1.0, -1.0, 1.0);
-        pixel_map.load_texture(gl);
+        let fluid_simulation = fluid::FluidSimulation::new(gl, 20, 20, -1.0, 1.0, -1.0, 1.0);
         Renderer {
-            pixel_map,
+          fluid_simulation,
             vao_ext,
         }
     }
@@ -31,10 +30,10 @@ impl Renderer {
         let ratio = canvas_width / canvas_height;
         let proj = na::Orthographic3::new(-ratio, ratio, -1.0, 1.0, -1.0, 1.0);
 
-        self.pixel_map.render(gl, proj.as_matrix().as_slice());
+        self.fluid_simulation.render(gl, proj.as_matrix().as_slice());
     }
 
     pub fn update(&mut self) {
-      &self.pixel_map.update();
+      &self.fluid_simulation.update();
     }
 }
