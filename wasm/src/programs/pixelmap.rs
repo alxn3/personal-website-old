@@ -1,5 +1,4 @@
 use crate::{render, util};
-use arrayvec::ArrayVec;
 use wasm_bindgen::prelude::*;
 use web_sys::WebGlRenderingContext as GL;
 use web_sys::*;
