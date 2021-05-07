@@ -1,11 +1,10 @@
 use crate::{render, util};
-use wasm_bindgen::prelude::*;
 use web_sys::WebGlRenderingContext as GL;
 use web_sys::*;
 
 pub struct PixelMap {
     shader: render::Shader,
-    framebuffer: WebGlFramebuffer,
+    //framebuffer: WebGlFramebuffer,
     texture: WebGlTexture,
     pixels: Box<[u8]>,
     width: usize,
@@ -64,7 +63,7 @@ impl PixelMap {
             pixels,
             width,
             height,
-            framebuffer,
+            //framebuffer,
             vertices,
             indices,
             tex_coord: [0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0],
@@ -85,7 +84,8 @@ impl PixelMap {
             GL::RGBA,
             GL::UNSIGNED_BYTE,
             Some(&self.pixels),
-        );
+        )
+        .expect("Could not set texture");
 
         gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MIN_FILTER, GL::NEAREST as i32);
         gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_MAG_FILTER, GL::NEAREST as i32);
@@ -112,16 +112,17 @@ impl PixelMap {
 
         self.buffer_attributes(gl);
         gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_u8_array(
-          GL::TEXTURE_2D,
-          0,
-          GL::RGBA as i32,
-          self.width as i32,
-          self.height as i32,
-          0,
-          GL::RGBA,
-          GL::UNSIGNED_BYTE,
-          Some(&self.pixels),
-      );
+            GL::TEXTURE_2D,
+            0,
+            GL::RGBA as i32,
+            self.width as i32,
+            self.height as i32,
+            0,
+            GL::RGBA,
+            GL::UNSIGNED_BYTE,
+            Some(&self.pixels),
+        )
+        .expect("Could not set texture");
 
         gl.uniform_matrix4fv_with_f32_array(
             self.shader
@@ -151,18 +152,18 @@ impl PixelMap {
     }
 
     pub fn set_pixel(&mut self, x: usize, y: usize, new_pixel: &[u8; 4]) {
-      let index = 4 * (y * self.height + x);
-      self.pixels[index + 1] = new_pixel[1];
-      self.pixels[index + 3] = new_pixel[3];
-      self.pixels[index + 2] = new_pixel[2];
-      self.pixels[index] = new_pixel[0];
+        let index = 4 * (y * self.height + x);
+        self.pixels[index + 1] = new_pixel[1];
+        self.pixels[index + 3] = new_pixel[3];
+        self.pixels[index + 2] = new_pixel[2];
+        self.pixels[index] = new_pixel[0];
     }
 
     pub fn get_width(&self) -> usize {
-      self.width
+        self.width
     }
 
     pub fn get_height(&self) -> usize {
-      self.height
+        self.height
     }
 }

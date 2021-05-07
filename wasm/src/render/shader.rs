@@ -11,7 +11,6 @@ pub struct Shader {
 
 impl Shader {
     pub fn from_shaders(gl: &GL, vert_shader: &str, frag_shader: &str) -> Result<Shader, String> {
-
         let vert_shader = compile_shader(gl, GL::VERTEX_SHADER, vert_shader)?;
         let frag_shader = compile_shader(gl, GL::FRAGMENT_SHADER, frag_shader)?;
 
@@ -65,29 +64,29 @@ impl Drop for Shader {
 }
 
 pub fn link_program(
-  gl: &GL,
-  vert_shader: &WebGlShader,
-  frag_shader: &WebGlShader,
+    gl: &GL,
+    vert_shader: &WebGlShader,
+    frag_shader: &WebGlShader,
 ) -> Result<WebGlProgram, String> {
-  let program = gl
-      .create_program()
-      .ok_or_else(|| String::from("Unable to create shader object"))?;
+    let program = gl
+        .create_program()
+        .ok_or_else(|| String::from("Unable to create shader object"))?;
 
-  gl.attach_shader(&program, vert_shader);
-  gl.attach_shader(&program, frag_shader);
-  gl.link_program(&program);
+    gl.attach_shader(&program, vert_shader);
+    gl.attach_shader(&program, frag_shader);
+    gl.link_program(&program);
 
-  if gl
-      .get_program_parameter(&program, GL::LINK_STATUS)
-      .as_bool()
-      .unwrap_or(false)
-  {
-      Ok(program)
-  } else {
-      Err(gl
-          .get_program_info_log(&program)
-          .unwrap_or_else(|| String::from("Unknown error creating program object")))
-  }
+    if gl
+        .get_program_parameter(&program, GL::LINK_STATUS)
+        .as_bool()
+        .unwrap_or(false)
+    {
+        Ok(program)
+    } else {
+        Err(gl
+            .get_program_info_log(&program)
+            .unwrap_or_else(|| String::from("Unknown error creating program object")))
+    }
 }
 
 pub fn compile_shader(gl: &GL, shader_type: u32, source: &str) -> Result<WebGlShader, String> {

@@ -1,8 +1,6 @@
 use super::super::render;
 use crate::util;
-use js_sys::WebAssembly;
 use wasm_bindgen::prelude::*;
-use wasm_bindgen::JsCast;
 use web_sys::WebGlRenderingContext as GL;
 use web_sys::*;
 

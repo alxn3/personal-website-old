@@ -1,4 +1,3 @@
-use crate::programs;
 use na;
 use web_sys::WebGlRenderingContext as GL;
 use crate::fluid;
