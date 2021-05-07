@@ -1,6 +1,6 @@
 use super::super::render;
+use crate::util;
 use js_sys::WebAssembly;
-use na;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::WebGlRenderingContext as GL;
@@ -13,89 +13,54 @@ extern "C" {
 }
 
 pub struct Cell {
-    program: render::Program,
-    index_count: i32,
-    rect_vertice_buffer: WebGlBuffer,
+    shader: render::Shader,
     u_color: WebGlUniformLocation,
     u_opacity: WebGlUniformLocation,
     u_transform: WebGlUniformLocation,
+    vertices: [f32; 8],
+    indices: [u16; 6],
 }
 
 impl Cell {
-    pub fn new(gl: &GL) -> Self {
-        let program = render::Program::from_shaders(
-            gl,
-            &[
-                render::Shader::from_vert_source(gl, super::super::shaders::vertex::CELL).unwrap(),
-                render::Shader::from_frag_source(gl, super::super::shaders::fragment::CELL).unwrap(),
-            ],
+    pub fn new(gl: &GL, left: f32, right: f32, bottom: f32, top: f32) -> Self {
+        let shader = render::Shader::from_shaders(gl,
+          crate::shaders::vertex::CELL,
+          crate::shaders::fragment::CELL
         ).unwrap();
 
-        let vertices_rect: [f32; 8] = [-2.5, 0.5, -0.5, -0.5, 0.5, 0.5, 0.5, -0.5];
+        let vertices_rect: [f32; 8] = [left, top, left, bottom, right, top, right, bottom];
         let indices_rect: [u16; 6] = [0, 1, 2, 2, 1, 3];
 
-        let memory_buffer = wasm_bindgen::memory()
-            .dyn_into::<WebAssembly::Memory>()
-            .unwrap()
-            .buffer();
-        let vertices_location = vertices_rect.as_ptr() as u32 / 4;
-        let vert_array = js_sys::Float32Array::new(&memory_buffer).subarray(
-            vertices_location,
-            vertices_location + vertices_rect.len() as u32,
-        );
-        let buffer_rect = gl.create_buffer().ok_or("Failed to create buffer").unwrap();
-        gl.bind_buffer(GL::ARRAY_BUFFER, Some(&buffer_rect));
-        gl.buffer_data_with_array_buffer_view(GL::ARRAY_BUFFER, &vert_array, GL::STATIC_DRAW);
 
-        let indices_memory_buffer = wasm_bindgen::memory()
-            .dyn_into::<WebAssembly::Memory>()
-            .unwrap()
-            .buffer();
-        let indices_location = indices_rect.as_ptr() as u32 / 2;
-        let indices_array = js_sys::Uint16Array::new(&indices_memory_buffer).subarray(
-            indices_location,
-            indices_location + indices_rect.len() as u32,
-        );
-        let buffer_indices = gl.create_buffer().unwrap();
-        gl.bind_buffer(GL::ELEMENT_ARRAY_BUFFER, Some(&buffer_indices));
-        gl.buffer_data_with_array_buffer_view(
-            GL::ELEMENT_ARRAY_BUFFER,
-            &indices_array,
-            GL::STATIC_DRAW,
-        );
 
         Self {
-            u_color: gl.get_uniform_location(&program.id, "uColor").unwrap(),
-            u_opacity: gl.get_uniform_location(&program.id, "uOpacity").unwrap(),
-            u_transform: gl.get_uniform_location(&program.id, "uTransform").unwrap(),
-            index_count: indices_array.length() as i32,
-            rect_vertice_buffer: buffer_rect,
-            program: program,
+            u_color: gl.get_uniform_location(&shader.program, "uColor").unwrap(),
+            u_opacity: gl.get_uniform_location(&shader.program, "uOpacity").unwrap(),
+            u_transform: gl.get_uniform_location(&shader.program, "uTransform").unwrap(),
+            vertices: vertices_rect,
+            indices: indices_rect,
+            shader,
         }
     }
 
-    pub fn render(&self, gl: &GL, canvas_width: f32, canvas_height: f32) {
-        gl.use_program(Some(&self.program.id));
+    fn buffer_attributes(&self, gl: &GL) {
+      let pos_attrib = gl.get_attrib_location(&self.shader.program, "aPosition");
+      gl.enable_vertex_attrib_array(pos_attrib as u32);
 
-        gl.bind_buffer(GL::ARRAY_BUFFER, Some(&self.rect_vertice_buffer));
-        gl.vertex_attrib_pointer_with_i32(0, 2, GL::FLOAT, false, 0, 0);
-        gl.enable_vertex_attrib_array(0);
+      util::gl::buffer_f32_data(gl, &self.vertices, pos_attrib as u32, 2);
+      util::gl::buffer_u16_indices(gl, &self.indices);
+    }
 
-        gl.uniform4f(Some(&self.u_color), 0.0, 0.5, 0.5, 1.0);
+    pub fn render(&self, gl: &GL, proj: &[f32], r: f32, g: f32, b: f32) {
+        gl.use_program(Some(&self.shader.program));
 
+        self.buffer_attributes(gl);
+
+        gl.uniform4f(Some(&self.u_color), r, g, b, 1.0);
         gl.uniform1f(Some(&self.u_opacity), 1.0);
 
-        let ratio = canvas_width / canvas_height;
+        gl.uniform_matrix4fv_with_f32_array(Some(&self.u_transform), false, &proj);
 
-        let proj = na::Orthographic3::new(-ratio, ratio, -1.0, 1.0, -1.0, 1.0);
-        //log(&ratio.to_string());
-
-        gl.uniform_matrix4fv_with_f32_array(
-            Some(&self.u_transform),
-            false,
-            &proj.as_matrix().as_slice(),
-        );
-
-        gl.draw_elements_with_i32(GL::TRIANGLES, self.index_count, GL::UNSIGNED_SHORT, 0);
+        gl.draw_elements_with_i32(GL::TRIANGLES, self.indices.len() as i32, GL::UNSIGNED_SHORT, 0);
     }
 }

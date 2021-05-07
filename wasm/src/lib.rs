@@ -13,6 +13,8 @@ mod gl_setup;
 mod programs;
 mod render;
 mod shaders;
+mod fluid;
+mod util;
 
 #[wasm_bindgen]
 extern "C" {

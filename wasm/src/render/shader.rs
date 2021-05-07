@@ -1,33 +1,32 @@
-use web_sys::WebGlRenderingContext as GL;
-use web_sys::{WebGlProgram, WebGlShader};
+use std::{cell::RefCell, collections::HashMap};
 
-pub struct Program {
+use web_sys::{WebGlProgram, WebGlShader};
+use web_sys::{WebGlRenderingContext as GL, WebGlUniformLocation};
+
+pub struct Shader {
     gl: GL,
-    pub id: WebGlProgram,
+    pub program: WebGlProgram,
+    uniforms: RefCell<HashMap<String, WebGlUniformLocation>>,
 }
 
-impl Program {
-    pub fn from_shaders(gl: &GL, shaders: &[Shader]) -> Result<Program, String> {
-        let program = gl
-            .create_program()
-            .ok_or_else(|| String::from("Unable to create shader object"))?;
+impl Shader {
+    pub fn from_shaders(gl: &GL, vert_shader: &str, frag_shader: &str) -> Result<Shader, String> {
 
-        for shader in shaders {
-            gl.attach_shader(&program, &shader.id);
-        }
-        gl.link_program(&program);
+        let vert_shader = compile_shader(gl, GL::VERTEX_SHADER, vert_shader)?;
+        let frag_shader = compile_shader(gl, GL::FRAGMENT_SHADER, frag_shader)?;
+
+        let program = link_program(gl, &vert_shader, &frag_shader)?;
 
         if gl
             .get_program_parameter(&program, GL::LINK_STATUS)
             .as_bool()
             .unwrap_or(false)
         {
-            for shader in shaders {
-                gl.detach_shader(&program, &shader.id);
-            }
-            Ok(Program {
+            let uniforms = RefCell::new(HashMap::new());
+            Ok(Shader {
                 gl: gl.clone(),
-                id: program,
+                program,
+                uniforms,
             })
         } else {
             Err(gl
@@ -36,57 +35,76 @@ impl Program {
         }
     }
 
+    pub fn get_uniform_location(
+        &self,
+        gl: &GL,
+        uniform_name: &str,
+    ) -> Option<WebGlUniformLocation> {
+        let mut uniforms = self.uniforms.borrow_mut();
+
+        if uniforms.get(uniform_name).is_none() {
+            uniforms.insert(
+                uniform_name.to_string(),
+                gl.get_uniform_location(&self.program, uniform_name)
+                    .expect(&format!(r#"Uniform '{}' not found"#, uniform_name)),
+            );
+        }
+
+        Some(uniforms.get(uniform_name).expect("loc").clone())
+    }
+
     pub fn set_used(&self) {
-        self.gl.use_program(Some(&self.id));
-    }
-}
-
-impl Drop for Program {
-    fn drop(&mut self) {
-        self.gl.delete_program(Some(&self.id));
-    }
-}
-pub struct Shader {
-    gl: GL,
-    pub id: WebGlShader,
-}
-
-impl Shader {
-    pub fn from_source(gl: &GL, source: &str, kind: u32) -> Result<Shader, String> {
-        let id = compile_shader(gl, kind, source)?;
-        Ok(Shader { gl: gl.clone(), id })
-    }
-
-    pub fn from_vert_source(gl: &GL, source: &str) -> Result<Shader, String> {
-        Shader::from_source(gl, source, GL::VERTEX_SHADER)
-    }
-
-    pub fn from_frag_source(gl: &GL, source: &str) -> Result<Shader, String> {
-        Shader::from_source(gl, source, GL::FRAGMENT_SHADER)
+        self.gl.use_program(Some(&self.program));
     }
 }
 
 impl Drop for Shader {
     fn drop(&mut self) {
-        self.gl.delete_shader(Some(&self.id));
+        self.gl.delete_program(Some(&self.program));
     }
 }
 
-pub fn compile_shader(context: &GL, shader_type: u32, source: &str) -> Result<WebGlShader, String> {
-    let shader = context
+pub fn link_program(
+  gl: &GL,
+  vert_shader: &WebGlShader,
+  frag_shader: &WebGlShader,
+) -> Result<WebGlProgram, String> {
+  let program = gl
+      .create_program()
+      .ok_or_else(|| String::from("Unable to create shader object"))?;
+
+  gl.attach_shader(&program, vert_shader);
+  gl.attach_shader(&program, frag_shader);
+  gl.link_program(&program);
+
+  if gl
+      .get_program_parameter(&program, GL::LINK_STATUS)
+      .as_bool()
+      .unwrap_or(false)
+  {
+      Ok(program)
+  } else {
+      Err(gl
+          .get_program_info_log(&program)
+          .unwrap_or_else(|| String::from("Unknown error creating program object")))
+  }
+}
+
+pub fn compile_shader(gl: &GL, shader_type: u32, source: &str) -> Result<WebGlShader, String> {
+    let shader = gl
         .create_shader(shader_type)
         .ok_or_else(|| String::from("Unable to create shader object"))?;
-    context.shader_source(&shader, source);
-    context.compile_shader(&shader);
+    gl.shader_source(&shader, source);
+    gl.compile_shader(&shader);
 
-    if context
+    if gl
         .get_shader_parameter(&shader, GL::COMPILE_STATUS)
         .as_bool()
         .unwrap_or(false)
     {
         Ok(shader)
     } else {
-        Err(context
+        Err(gl
             .get_shader_info_log(&shader)
             .unwrap_or_else(|| String::from("Unknown error creating shader")))
     }
