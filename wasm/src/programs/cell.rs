@@ -31,8 +31,6 @@ impl Cell {
         let vertices_rect: [f32; 8] = [left, top, left, bottom, right, top, right, bottom];
         let indices_rect: [u16; 6] = [0, 1, 2, 2, 1, 3];
 
-
-
         Self {
             u_color: gl.get_uniform_location(&shader.program, "uColor").unwrap(),
             u_opacity: gl.get_uniform_location(&shader.program, "uOpacity").unwrap(),

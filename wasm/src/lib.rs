@@ -43,6 +43,7 @@ impl WASMClient {
 
     pub fn update(&mut self, time: f32, width: f32, height: f32) -> Result<(), JsValue> {
         app_state::update_dynamic_data(time, width, height);
+        &self.renderer.update();
         Ok(())
     }
 
